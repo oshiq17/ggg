@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  login        String    @unique
+  status       Status    @default(PENDING)
+  role         AdminRole @default(ADMIN)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  refreshToken String?
+}
+
+model Seller {
+  id           String  @id @default(uuid())
+  fullName     String
+  phoneNumber  String  @unique
+  email        String  @unique
+  img          String
+  wallet       BigInt  @default(0)
+  login        String  @unique
+  password     String
+  status       Status  @default(PENDING)
+  refreshToken String?
+
+  Sample       Sample[]
+  Debtor       Debtor[]
+  Notification Notification[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Debt         Debt[]
+}
+
+model Debtor {
+  id String @id @default(uuid())
+
+  name     String
+  address  String
+  sellerId String
+  note     String?
+  star     Boolean @default(false)
+
+  Seller         Seller           @relation(fields: [sellerId], references: [id])
+  Phone          PhoneOfDebtor[]
+  ImgOfDebtor    ImgOfDebtor[]
+  Debt           Debt[]
+  Notification   Notification[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  PaymentHistory PaymentHistory[]
+}
+
+model Debt {
+  id             String           @id @default(uuid())
+  productName    String
+  date           DateTime
+  term           Int
+  note           String?
+  amount         BigInt
+  Debtor         Debtor           @relation(fields: [debtorId], references: [id])
+  debtorId       String
+  Seller         Seller           @relation(fields: [sellerId], references: [id])
+  sellerId       String
+  ImgOfDebt      ImgOfDebt[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  Payment        Payment[]
+  PaymentHistory PaymentHistory[]
+}
+
+model PhoneOfDebtor {
+  id          String   @id @default(uuid())
+  phoneNumber String
+  Debtor      Debtor   @relation(fields: [debtorId], references: [id])
+  debtorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ImgOfDebtor {
+  id        String   @id @default(uuid())
+  name      String
+  Debtor    Debtor   @relation(fields: [debtorId], references: [id])
+  debtorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ImgOfDebt {
+  id        String   @id @default(uuid())
+  name      String
+  Debt      Debt     @relation(fields: [debtId], references: [id])
+  debtId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sample {
+  id       String  @id @default(uuid())
+  text     String
+  isActive Boolean @default(true)
+  sellerId String
+
+  Seller    Seller   @relation(fields: [sellerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  message   String
+  isSended  Boolean
+  Seller    Seller   @relation(fields: [sellerId], references: [id])
+  sellerId  String
+  Debtor    Debtor   @relation(fields: [debtorId], references: [id])
+  debtorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  Debt      Debt     @relation(fields: [debtId], references: [id])
+  debtId    String
+  amount    BigInt
+  month     Int
+  date      DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentHistory {
+  id       String   @id @default(uuid())
+  Debtor   Debtor   @relation(fields: [debtorId], references: [id])
+  debtorId String
+  Debt     Debt     @relation(fields: [debtId], references: [id])
+  debtId   String
+  paidAt   DateTime
+
+  amount    BigInt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Status {
+  PENDING
+  ACTIVE
+}
